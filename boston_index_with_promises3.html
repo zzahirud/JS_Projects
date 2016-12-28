@@ -1,0 +1,366 @@
+<!-- This is the corresponding "starter code" for 04_Hello Map in Udacity and Google's Maps
+API Course, Lesson 1 -->
+<html>
+ <head>
+ <!-- styles put here, but you can include a CSS file and reference it instead! -->
+   <style type="text/css">
+    html,
+      body {
+        font-family: Arial, sans-serif;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+      .container {
+        height: 100%;
+        position: relative;
+      }
+      input {
+        font-size: 12px;
+      }
+      h1 {
+        color: #525454;
+        font-size: 22px;
+        margin: 0 0 10px 0;
+        text-align: center;
+      }
+      #hide-listings,
+      #show-listings {
+        width: 48%;
+      }
+      #map {
+        bottom:0px;
+        height: 100%;
+        left: 362px;
+        position: absolute;
+        right: 0px;
+      }
+      .options-box {
+        background: #fff;
+        border: 1px solid #999;
+        border-radius: 3px;
+        height: 100%;
+        line-height: 35px;
+        padding: 10px 10px 30px 10px;
+        text-align: left;
+        width: 340px;
+      }
+   </style>
+ </head>
+ <body>
+   <!-- TODO 1: Create a place to put the map in the HTML-->
+    <div class="container">
+      <div class="options-box">
+        <h1>Find Your New NYC Home</h1>
+        <div>
+          <input id="show-listings" type="button" value="Show Listings">
+          <input id="hide-listings" type="button" value="Hide Listings">
+
+          <input id="optimized_route" type="button" value="Optimized Route">
+
+        </div>
+      </div>
+      <div id="map"></div>
+    </div>
+   <script>
+
+
+    // angular parameterized function
+    // polyline -- not required
+    // markers with # labels -- done
+    // infowindow w/ address and pictures
+    // modes of transportation detail -- later
+    // function to match gmap address with our address -- later
+
+    var map;
+    var markers = [];
+    function initMap() {
+
+        var largeInfowindow = new google.maps.InfoWindow();
+        var bounds = new google.maps.LatLngBounds();
+        var mapCanvas = document.getElementById("map");
+        var mapOptions = {
+            center: new google.maps.LatLng(40.7413549, -73.9980244), 
+            zoom: 13
+        }
+        // will bind the map to html area
+         map = new google.maps.Map(mapCanvas, mapOptions);
+        
+        // locations is an array of location obj w/ 2 properties.
+
+        
+        var locations = [
+            
+            {title: '11 Peabody Terrace Cambridge MA', location: {lat: 42.366838, lng: -71.114549}},
+            {title: 'Harvard Square Cambridge MA', location: {lat: 42.3736, lng: -71.1190 }},
+            {title: 'The Kebab Factory Somerville MA', location: {lat: 42.3780, lng: -71.1066 }},
+            {title: '211 Cherry St Shrewsbury MA 01545', location: {lat: 42.265909, lng: -71.698765 }}
+            
+
+        ];
+
+        
+        // The following group uses the location array to create an array of markers on initialize.
+        // Each Marker will have its own
+
+        for (var i = 0; i < locations.length; i++) {
+          // Get the position from the location array.
+          var position = locations[i].location;
+          var title = locations[i].title;
+          // Create a marker per location, and put into markers array.
+          var marker = new google.maps.Marker({
+            //map: map,
+            position: position,
+            title: title,
+            animation: google.maps.Animation.DROP,
+            label: {
+              text: i.toString()
+            },
+            //label: i,
+            id: i
+          });
+           // Create an onclick event to open an infowindow at each marker.
+          marker.addListener('click', function() {
+            populateInfoWindow(this, largeInfowindow);
+          });
+          // Push the marker to our array of markers.
+          markers.push(marker);
+         //extend the bounds of the map to accomodate the position of each location
+          //bounds.extend(markers[i].position);
+        }
+        // Extend the boundaries of the map for each marker
+        //map.fitBounds(bounds);
+        document.getElementById('show-listings').addEventListener('click', showListings);
+        document.getElementById('hide-listings').addEventListener('click', hideListings);
+
+        document.getElementById('optimized_route').addEventListener('click', optimizedroute);
+      }
+
+      // This function populates the infowindow when the marker is clicked. We'll only allow
+      // one infowindow which will open at the marker that is clicked, and populate based
+      // on that markers position.
+      function populateInfoWindow(marker, infowindow) {
+        // Check to make sure the infowindow is not already opened on this marker.
+        if (infowindow.marker != marker) {
+          infowindow.marker = marker;
+          infowindow.setContent('<div>' + marker.title + '</div>');
+          infowindow.open(map, marker);
+          // Make sure the marker property is cleared if the infowindow is closed.
+          infowindow.addListener('closeclick',function(){
+            infowindow.setMarker(null);
+          });
+        }
+      }
+
+       // This function will loop through the markers array and display them all.
+      function showListings() {
+        var bounds = new google.maps.LatLngBounds();
+        // Extend the boundaries of the map for each marker and display the marker
+        for (var i = 0; i < markers.length; i++) {
+
+          //filter on active day property
+          markers[i].setMap(map);
+          bounds.extend(markers[i].position);
+        }
+        map.fitBounds(bounds);
+      }
+      // This function will loop through the listings and hide them all.
+      function hideListings() {
+       
+        for (var i = 0; i < markers.length; i++) {
+           //filter on activeday property
+          markers[i].setMap(null);
+        }
+      }
+
+      // NEW
+      function optimizedroute(){
+
+        var objs = [];
+        var locations = [
+            {title: '11 Peabody Terrace Cambridge MA', location: {lat: 42.366838, lng: -71.114549}},
+            {title: '18 Brattle St, Cambridge, MA 02138, USA', location: {lat: 42.3736, lng: -71.1190 }},
+            {title: '414 Washington St, Somerville, MA 02143, USA', location: {lat: 42.3780, lng: -71.1066 }},
+            {title: '211 Cherry St, Shrewsbury, MA 01545, USA', location: {lat: 42.265909, lng: -71.698765 }},
+            {title: '199 Boylston St, Chestnut Hill, MA 02467, USA', location:  {lat: 42.265909, lng: -71.698765 }}
+        ];
+        var modes = ['DRIVING','WALKING', 'TRANSIT', 'BICYCLING' ]
+        var results_from_api = [];
+        
+        //INPUT
+        var starting_location = locations[0].title ; 
+        var destination_addresses =[locations[1].title ,locations[2].title ,locations[3].title , locations[4].title ]; 
+        //var destination_addresses =[locations[1].title]
+        results_from_api.push(starting_location);
+        //Functions/Workers
+        
+        function gmap_api(){
+              let promises = [];
+              for ( let i=0; i<modes.length; i++) {
+                promises.push(distance_matrix_api(starting_location, destination_addresses, modes[i]))
+              }
+              return Promise.all(promises);          
+          }
+
+        /*      
+        function find_shortest_distance(){
+              var shortest_distance = 100000;
+              var location_of = '';
+              for(var x=0;x<objs.length;x++){
+                  if(objs[x].distance < shortest_distance ){
+                      shortest_distance = objs[x].distance;
+                      location_of = objs[x].destination;
+                  }
+              }
+              objs =[];
+              var a = destination_addresses.indexOf(location_of, 0) ;
+              destination_addresses.splice(a,1);            
+              starting_location = location_of ;
+              results_from_api.push(starting_location) ;
+              return location_of ;
+          }
+          */
+                 
+      function distance_matrix_api(origin, destination,mode){
+
+        return new Promise(function(resolve,reject){
+        
+        var origin_array = [];
+        origin_array.push(origin);
+        var destination_array = destination;
+        var service = new google.maps.DistanceMatrixService();
+
+        service.getDistanceMatrix(
+        {
+          origins: origin_array,
+          destinations: destination_array,
+          travelMode: mode,
+          transitOptions: {
+            modes: ["SUBWAY", "BUS","RAIL"],
+            routingPreference: "FEWER_TRANSFERS" 
+          },
+          //drivingOptions: DrivingOptions,
+          unitSystem: google.maps.UnitSystem.IMPERIAL,
+          avoidHighways: false,
+          avoidTolls: false,
+        }, function callback(response, status) {
+        
+      if (status == 'OK') {
+        // Javascript functions have access to parent scope variables
+        //console.log(mode);
+        var origins = response.originAddresses;
+        var destinations = response.destinationAddresses;
+
+        for (var i = 0; i < origins.length; i++) {
+          var results = response.rows[i].elements;
+          for (var j = 0; j < results.length; j++) {
+            var element = results[j];
+            
+            //console.log(element);
+
+              var distance = 'N/A';
+              var duration = 'N/A' ;
+            
+              if(element.distance){
+                 distance = element.distance.text;
+                //console.log(distance);
+                //console.log(typeof(distance));
+                distance = distance.replace("mi", "");
+                distance = Number(distance);
+                //console.log(distance);
+              }
+              if(element.duration){
+                 duration = element.duration.text;
+                //console.log(duration);
+              }
+              
+              var from = origins[i];
+              var to = destinations[j];
+              //console.log(from);
+              //console.log(to);
+              //console.log(mode); 
+              
+              //console.log({'origin':from,'destination':to,'mode':mode,'distance':distance,'duration':duration});
+              objs.push({'origin':from,'destination':to,'mode':mode,'distance':distance,'duration':duration});
+              //console.log(objs);                      
+                }
+        }
+            }
+            from = mode + ' ' + 'DONE !' 
+            resolve(from);
+        }//callback ending here
+        );
+        })  
+      }
+
+      //for(var i=0;i<2;i++){
+        var ii = 0;
+        function next() {
+        if (ii < 4) {
+
+          console.log("Iteration # " +ii);
+          console.log("Starting Location");
+          console.log(starting_location);
+          console.log("Destinations");
+          console.log(destination_addresses)
+          console.log("Results : ")
+          var mainfunction = gmap_api();
+          mainfunction
+            .then(function (results) {
+                ii++;
+                //var new_origin;
+                console.log(results);    // 'hello world’
+                // let mode1REsult = results[0];
+                // let mode2Result = results[1[]]
+                
+                console.log(objs);
+                //console.log(find_shortest_distance());
+                //console.log(objs);
+                //
+              var shortest_distance = 100000;
+              var location_of = '';
+              for(var x=0;x<objs.length;x++){
+                  if(objs[x].distance < shortest_distance ){
+                      shortest_distance = objs[x].distance;
+                      location_of = objs[x].destination;
+                  }
+              }
+              //clearing objects
+              objs =[];
+              console.log(objs);
+              //cleaing destination_addresses
+              var a = destination_addresses.indexOf(location_of, 0) ;
+              destination_addresses.splice(a,1);  
+              console.log(destination_addresses); 
+              //setting new Location         
+              starting_location = location_of ;
+              console.log("Closest Location is:")
+              console.log(starting_location);
+              //setting final route
+              results_from_api.push(starting_location) ;
+              console.log(results_from_api);
+
+              //get details from objs , walking bicycling, times then clear the objs
+
+              //gmap_api()
+              next();
+            }) ;
+        }
+        }
+        next();
+      //}
+
+      }
+      
+
+
+
+
+     // TODO: Complete the following function to initialize the map
+    
+   </script>
+   <!--TODO: Load the JS API ASYNCHRONOUSLY below.-->
+   <script async defer
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBC9dZuzcp1nxnd2M2m6yGI5gh_2BLTnrc&callback=initMap"></script>
+ </body>
+</html>
